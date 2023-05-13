@@ -1,0 +1,5 @@
+.aws_credentials/credentials
+.terraform*
+myKey.pem
+aws_key*
+terraform*

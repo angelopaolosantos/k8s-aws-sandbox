@@ -1,0 +1,7 @@
+[default]
+region=eu-north-1
+output=text
+
+[profile user1]
+region=eu-north-1
+output=json
