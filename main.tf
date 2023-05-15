@@ -99,27 +99,27 @@ resource "tls_private_key" "pk" {
 }
 
 resource "aws_key_pair" "kp" {
-  key_name   = "myKey"       # Create a "myKey" to AWS!!
+  key_name   = "myKey" # Create a "myKey" to AWS!!
   public_key = tls_private_key.pk.public_key_openssh
 
   provisioner "local-exec" { # Create a "myKey.pem" to your computer!!
-    //command = "echo '${tls_private_key.pk.private_key_pem}' > ./.ssh/myKey.pem"
-    inline = [
-      "echo '${tls_private_key.pk.private_key_pem}' > ./.ssh/myKey.pem",
-      "chmod 600 ./.ssh/myKey.pem",
-    ]
+    command = "echo '${tls_private_key.pk.private_key_pem}' > ${path.cwd}/.ssh/myKey.pem"
+  }
+
+  provisioner "local-exec" { # Create a "myKey.pem" to your computer!!
+    command = "chmod 600 ${path.cwd}/.ssh/myKey.pem"
   }
 }
 
 
 resource "aws_instance" "controlplane" {
-  depends_on = [ aws_key_pair.kp, tls_private_key.pk ]
-  ami           = "ami-0a6351192ce04d50c"
-  instance_type = "t3.micro"
-  subnet_id = aws_subnet.public_subnet.id
+  depends_on                  = [aws_key_pair.kp, tls_private_key.pk]
+  ami                         = "ami-0a6351192ce04d50c"
+  instance_type               = "t3.micro"
+  subnet_id                   = aws_subnet.public_subnet.id
   associate_public_ip_address = "true"
 
-  key_name= "myKey"
+  key_name               = "myKey"
   vpc_security_group_ids = [aws_security_group.main.id]
 
   provisioner "remote-exec" {
@@ -130,12 +130,13 @@ resource "aws_instance" "controlplane" {
   }
 
   connection {
-      type        = "ssh"
-      host        = self.public_ip
-      user        = "ubuntu"
-      private_key = file("${path.cwd}/.ssh/myKey.pem")
-      timeout     = "4m"
-   }
+    type        = "ssh"
+    host        = self.public_ip
+    user        = "ec2-user"
+    private_key = file("${path.cwd}/.ssh/myKey.pem")
+    timeout     = "4m"
+    insecure    = false
+  }
 
   tags = {
     Name = "controlplane"
@@ -149,7 +150,7 @@ resource "aws_security_group" "main" {
 
   egress = [
     {
-      cidr_blocks      = [ "0.0.0.0/0", ]
+      cidr_blocks      = ["0.0.0.0/0", ]
       description      = ""
       from_port        = 0
       ipv6_cidr_blocks = []
@@ -160,18 +161,18 @@ resource "aws_security_group" "main" {
       to_port          = 0
     }
   ]
- ingress                = [
-   {
-     cidr_blocks      = [ "0.0.0.0/0", ]
-     description      = ""
-     from_port        = 22
-     ipv6_cidr_blocks = []
-     prefix_list_ids  = []
-     protocol         = "tcp"
-     security_groups  = []
-     self             = false
-     to_port          = 22
-  }
+  ingress = [
+    {
+      cidr_blocks      = ["0.0.0.0/0", ]
+      description      = ""
+      from_port        = 22
+      ipv6_cidr_blocks = []
+      prefix_list_ids  = []
+      protocol         = "tcp"
+      security_groups  = []
+      self             = false
+      to_port          = 22
+    }
   ]
 }
 
@@ -182,9 +183,9 @@ resource "aws_key_pair" "deployer" {
 }*/
 
 resource "aws_instance" "node1" {
-  ami           = "ami-0a6351192ce04d50c"
-  instance_type = "t3.micro"
-  subnet_id = aws_subnet.public_subnet.id
+  ami                         = "ami-0a6351192ce04d50c"
+  instance_type               = "t3.micro"
+  subnet_id                   = aws_subnet.public_subnet.id
   associate_public_ip_address = "true"
   tags = {
     Name = "node1"
@@ -192,9 +193,9 @@ resource "aws_instance" "node1" {
 }
 
 resource "aws_instance" "node2" {
-  ami           = "ami-0a6351192ce04d50c"
-  instance_type = "t3.micro"
-  subnet_id = aws_subnet.public_subnet.id
+  ami                         = "ami-0a6351192ce04d50c"
+  instance_type               = "t3.micro"
+  subnet_id                   = aws_subnet.public_subnet.id
   associate_public_ip_address = "true"
   tags = {
     Name = "node2"
