@@ -111,38 +111,6 @@ resource "aws_key_pair" "kp" {
   }
 }
 
-
-resource "aws_instance" "controlplane" {
-  depends_on                  = [aws_key_pair.kp, tls_private_key.pk]
-  ami                         = "ami-0a6351192ce04d50c"
-  instance_type               = "t3.micro"
-  subnet_id                   = aws_subnet.public_subnet.id
-  associate_public_ip_address = "true"
-
-  key_name               = "myKey"
-  vpc_security_group_ids = [aws_security_group.main.id]
-
-  provisioner "remote-exec" {
-    inline = [
-      "touch hello.txt",
-      "echo helloworld remote provisioner >> hello.txt",
-    ]
-  }
-
-  connection {
-    type        = "ssh"
-    host        = self.public_ip
-    user        = "ec2-user"
-    private_key = file("${path.cwd}/.ssh/myKey.pem")
-    timeout     = "4m"
-    insecure    = false
-  }
-
-  tags = {
-    Name = "controlplane"
-  }
-}
-
 resource "aws_security_group" "main" {
   name        = "allow_ssh"
   description = "Allow SSH traffic"
@@ -176,29 +144,61 @@ resource "aws_security_group" "main" {
   ]
 }
 
-/*
-resource "aws_key_pair" "deployer" {
-  key_name   = "aws_key"
-  public_key = "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDbvRN/gvQBhFe+dE8p3Q865T/xTKgjqTjj56p1IIKbq8SDyOybE8ia0rMPcBLAKds+wjePIYpTtRxT9UsUbZJTgF+SGSG2dC6+ohCQpi6F3xM7ryL9fy3BNCT5aPrwbR862jcOIfv7R1xVfH8OS0WZa8DpVy5kTeutsuH5suehdngba4KhYLTzIdhM7UKJvNoUMRBaxAqIAThqH9Vt/iR1WpXgazoPw6dyPssa7ye6tUPRipmPTZukfpxcPlsqytXWlXm7R89xAY9OXkdPPVsrQdkdfhnY8aFb9XaZP8cm7EOVRdxMsA1DyWMVZOTjhBwCHfEIGoePAS3jFMqQjGWQd rahul@rahul-HP-ZBook-15-G2"
-}*/
+variable "instance_controlplane_count" {
+  default = 1
+}
 
-resource "aws_instance" "node1" {
-  ami                         = "ami-0a6351192ce04d50c"
-  instance_type               = "t3.micro"
+variable "instance_worker_count" {
+  default = 2
+}
+
+variable "instance_type" {
+  default = "t3.micro"
+}
+
+variable "instance_ami" {
+  default = "ami-0a6351192ce04d50c"
+}
+
+resource "aws_instance" "controlplane" {
+  ami                         = var.instance_ami
+  instance_type               = var.instance_type
+  count                       = var.instance_controlplane_count
   subnet_id                   = aws_subnet.public_subnet.id
   associate_public_ip_address = "true"
   tags = {
-    Name = "node1"
+    Name = "kubemaster-${count.index + 1}"
+  }
+
+  key_name               = "myKey"
+  vpc_security_group_ids = [aws_security_group.main.id]
+
+  provisioner "remote-exec" {
+    inline = [
+      "touch hello.txt",
+      "echo helloworld remote provisioner >> hello.txt",
+    ]
+  }
+
+  connection {
+    type        = "ssh"
+    host        = self.public_ip
+    user        = "ec2-user"
+    private_key = file("${path.cwd}/.ssh/myKey.pem")
+    timeout     = "4m"
+    insecure    = false
   }
 }
 
-resource "aws_instance" "node2" {
-  ami                         = "ami-0a6351192ce04d50c"
-  instance_type               = "t3.micro"
+resource "aws_instance" "worker" {
+  ami                         = var.instance_ami
+  instance_type               = var.instance_type
+  count                       = var.instance_worker_count
   subnet_id                   = aws_subnet.public_subnet.id
   associate_public_ip_address = "true"
   tags = {
-    Name = "node2"
+    Name = "kubenode-${count.index + 1}"
   }
+  key_name               = "myKey"
+  vpc_security_group_ids = [aws_security_group.main.id]
 }
-
