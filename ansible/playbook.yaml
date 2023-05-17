@@ -187,3 +187,7 @@
               - kubeadm
               - kubectl
             state: present
+
+        - name: Start and enable kubelet
+          shell:
+            cmd: systemctl enable --now kubelet

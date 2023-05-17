@@ -9,3 +9,4 @@ ansible-playbook -i ./ansible/inventory.yaml ./ansible/playbook.yaml
 
 Reference:
 https://www.linuxtechi.com/how-to-install-kubernetes-cluster-rhel/
+https://www.cloudiqtech.com/how-to-set-up-a-kubernetes-cluster-on-rhel-7-6-on-aws/
