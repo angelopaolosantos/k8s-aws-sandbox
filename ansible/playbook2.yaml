@@ -1,0 +1,6 @@
+- name: Kubernetes Prerequisites
+  hosts: all
+  become: true
+  tasks:
+    - name: Ping my hosts
+      ansible.builtin.ping:

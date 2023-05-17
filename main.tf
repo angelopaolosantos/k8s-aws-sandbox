@@ -4,6 +4,10 @@ terraform {
       source  = "hashicorp/aws"
       version = "~> 4.0"
     }
+    ansible = {
+      source  = "ansible/ansible"
+      version = "1.1.0"
+    }
   }
 }
 
@@ -12,6 +16,10 @@ provider "aws" {
   shared_config_files      = ["./.aws_credentials/config"]
   shared_credentials_files = ["./.aws_credentials/credentials"]
   profile                  = "angelo"
+}
+
+provider "ansible" {
+  # Configuration options
 }
 
 # Create a VPC
@@ -201,4 +209,53 @@ resource "aws_instance" "worker" {
   }
   key_name               = "myKey"
   vpc_security_group_ids = [aws_security_group.main.id]
+}
+
+# Ansible Section
+
+resource "ansible_host" "kubemaster" {
+  name   = aws_instance.controlplane[count.index].public_ip
+  groups = ["controlplanes"]
+
+  variables = {
+    ansible_user                 = "ec2-user"
+    ansible_ssh_private_key_file = "./.ssh/myKey.pem"
+    ansible_python_interpreter   = "/usr/bin/python3"
+    host_name                    = aws_instance.controlplane[count.index].tags["Name"]
+    greetings                    = "from host!"
+    some                         = "variable"
+  }
+  count = var.instance_controlplane_count
+}
+
+resource "ansible_host" "kubenode" {
+  name   = aws_instance.worker[count.index].public_ip
+  groups = ["workers"]
+
+  variables = {
+    ansible_user                 = "ec2-user"
+    ansible_ssh_private_key_file = "./.ssh/myKey.pem"
+    ansible_python_interpreter   = "/usr/bin/python3"
+    host_name                    = aws_instance.worker[count.index].tags["Name"]
+    greetings                    = "from host!"
+    some                         = "variable"
+  }
+  count = var.instance_worker_count
+}
+
+
+resource "ansible_group" "controlplanes" {
+  name     = "controlplanes"
+  children = ["kubemaster"]
+  variables = {
+    hello = "from group!"
+  }
+}
+
+resource "ansible_group" "workers" {
+  name     = "workers"
+  children = ["kubenode"]
+  variables = {
+    hello = "from group!"
+  }
 }
