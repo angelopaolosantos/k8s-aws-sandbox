@@ -143,6 +143,17 @@ resource "aws_security_group" "main" {
     {
       cidr_blocks      = ["0.0.0.0/0", ]
       description      = ""
+      from_port        = 6443
+      ipv6_cidr_blocks = []
+      prefix_list_ids  = []
+      protocol         = "tcp"
+      security_groups  = []
+      self             = true
+      to_port          = 6443
+    },
+    {
+      cidr_blocks      = ["0.0.0.0/0", ]
+      description      = ""
       from_port        = 22
       ipv6_cidr_blocks = []
       prefix_list_ids  = []
