@@ -9,6 +9,14 @@
       ansible.builtin.debug:
         msg: Installing Kubernetes...
 
+    - name: Disable swap
+      shell:
+        cmd: swapoff -a
+
+    - name: Disable swap on startup
+      shell:
+        cmd: sed -i '/ swap / s/^\(.*\)$/#\1/g' /etc/fstab
+
     - name: Forwarding IPv4 and letting iptables see bridged traffic
       shell:
         cmd: |
@@ -172,14 +180,16 @@
               gpgcheck=1
               gpgkey=https://packages.cloud.google.com/yum/doc/yum-key.gpg https://packages.cloud.google.com/yum/doc/rpm-package-key.gpg
               exclude=kubelet kubeadm kubectl
+
         - name: Set SELinux in permissive mode (effectively disabling it)
           shell:
             cmd: setenforce 0
+
         - name: Update /etc/selinux/config, Set SELINUX=permissive
           shell:
             cmd: sed -i 's/^SELINUX=enforcing$/SELINUX=permissive/' /etc/selinux/config
         
-        - name: Update yum and install kubelet, kubeadm, kubectl
+        - name: Install kubelet kubeadm kubectl
           yum:
             disable_excludes: kubernetes
             name:

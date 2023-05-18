@@ -28,6 +28,8 @@ resource "aws_vpc" "sandbox" {
   tags = {
     Name = "sandbox"
   }
+  enable_dns_hostnames = true
+  enable_dns_support = true
 }
 
 resource "aws_subnet" "public_subnet" {
