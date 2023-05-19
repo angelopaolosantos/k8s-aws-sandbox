@@ -25,11 +25,13 @@ provider "ansible" {
 # Create a VPC
 resource "aws_vpc" "sandbox" {
   cidr_block = "10.25.0.0/16"
-  tags = {
-    Name = "sandbox"
-  }
   enable_dns_hostnames = true
   enable_dns_support = true
+  
+  tags = {
+    Name = "sandbox"
+    terraform_group = "ec2-k8s"
+  }
 }
 
 resource "aws_subnet" "public_subnet" {
@@ -38,6 +40,7 @@ resource "aws_subnet" "public_subnet" {
 
   tags = {
     Name = "public_subnet"
+    terraform_group = "ec2-k8s"
   }
 }
 
@@ -47,6 +50,7 @@ resource "aws_subnet" "private_subnet" {
 
   tags = {
     Name = "private_subnet"
+    terraform_group = "ec2-k8s"
   }
 }
 
@@ -55,6 +59,7 @@ resource "aws_internet_gateway" "sandbox_igw" {
 
   tags = {
     Name = "My Internet Gateway"
+    terraform_group = "ec2-k8s"
   }
 }
 
@@ -73,6 +78,7 @@ resource "aws_route_table" "public_rt" {
   # A map of tags to assign to the resource.
   tags = {
     Name = "public_rt"
+    terraform_group = "ec2-k8s"
   }
 }
 
@@ -92,6 +98,7 @@ resource "aws_route_table" "private1" {
   # A map of tags to assign to the resource.
   tags = {
     Name = "private1"
+    terraform_group = "ec2-k8s"
   }
 }*/
 
@@ -118,6 +125,10 @@ resource "aws_key_pair" "kp" {
 
   provisioner "local-exec" { # Create a "myKey.pem" to your computer!!
     command = "chmod 600 ${path.cwd}/.ssh/myKey.pem"
+  }
+
+  tags = {
+    terraform_group = "ec2-k8s"
   }
 }
 
@@ -163,6 +174,9 @@ resource "aws_security_group" "main" {
       to_port          = 22
     }
   ]
+  tags = {
+    terraform_group = "ec2-k8s"
+  }
 }
 
 variable "instance_controlplane_count" {
@@ -189,6 +203,7 @@ resource "aws_instance" "controlplane" {
   associate_public_ip_address = "true"
   tags = {
     Name = "kubemaster-${count.index + 1}"
+    terraform_group = "ec2-k8s"
   }
 
   key_name               = "myKey"
@@ -219,6 +234,7 @@ resource "aws_instance" "worker" {
   associate_public_ip_address = "true"
   tags = {
     Name = "kubenode-${count.index + 1}"
+    terraform_group = "ec2-k8s"
   }
   key_name               = "myKey"
   vpc_security_group_ids = [aws_security_group.main.id]
