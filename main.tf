@@ -23,16 +23,16 @@ provider "ansible" {
 }
 
 resource "aws_security_group" "kube-mutual-sg" {
-  name = "kube-mutual-sec-group"
-  vpc_id      = aws_vpc.sandbox.id
+  name   = "kube-mutual-sec-group"
+  vpc_id = aws_vpc.sandbox.id
   tags = {
     Name = "kube-mutual-secgroup"
   }
 }
 
 resource "aws_security_group" "kube-worker-sg" {
-  name = "kube-worker-sec-group"
-  vpc_id      = aws_vpc.sandbox.id
+  name   = "kube-worker-sec-group"
+  vpc_id = aws_vpc.sandbox.id
 
   egress = [
     {
@@ -40,11 +40,11 @@ resource "aws_security_group" "kube-worker-sg" {
       from_port        = 0
       to_port          = 0
       protocol         = "-1"
-      description = ""
+      description      = ""
       ipv6_cidr_blocks = []
-      prefix_list_ids = []
-      security_groups = []
-      self = false
+      prefix_list_ids  = []
+      security_groups  = []
+      self             = false
     }
   ]
   ingress = [
@@ -55,42 +55,42 @@ resource "aws_security_group" "kube-worker-sg" {
       to_port          = 22
       protocol         = "tcp"
       ipv6_cidr_blocks = []
-      prefix_list_ids = []
-      security_groups = []
-      self = false
+      prefix_list_ids  = []
+      security_groups  = []
+      self             = false
     },
     {
       cidr_blocks      = ["0.0.0.0/0", ]
-      description = "NodePort Services"
+      description      = "NodePort Services"
       from_port        = 30000
       to_port          = 32767
       protocol         = "tcp"
       ipv6_cidr_blocks = []
-      prefix_list_ids = []
-      security_groups = []
-      self = false
+      prefix_list_ids  = []
+      security_groups  = []
+      self             = false
     },
     {
-      security_groups = [aws_security_group.kube-mutual-sg.id]
+      security_groups  = [aws_security_group.kube-mutual-sg.id]
       description      = "Kubelet API"
       from_port        = 10250
       to_port          = 10250
       protocol         = "tcp"
       ipv6_cidr_blocks = []
-      prefix_list_ids = []
-      self = false
-      cidr_blocks = []
+      prefix_list_ids  = []
+      self             = false
+      cidr_blocks      = []
     }
   ]
   tags = {
-    Name = "kube-worker-secgroup"
+    Name            = "kube-worker-secgroup"
     terraform_group = "ec2-k8s"
   }
 }
 
 resource "aws_security_group" "kube-master-sg" {
-  name = "kube-master-sec-group"
-  vpc_id      = aws_vpc.sandbox.id
+  name   = "kube-master-sec-group"
+  vpc_id = aws_vpc.sandbox.id
 
   egress = [
     {
@@ -98,11 +98,11 @@ resource "aws_security_group" "kube-master-sg" {
       from_port        = 0
       to_port          = 0
       protocol         = "-1"
-      description = ""
+      description      = ""
       ipv6_cidr_blocks = []
-      prefix_list_ids = []
-      security_groups = []
-      self = false
+      prefix_list_ids  = []
+      security_groups  = []
+      self             = false
     }
   ]
   ingress = [
@@ -113,9 +113,9 @@ resource "aws_security_group" "kube-master-sg" {
       to_port          = 22
       protocol         = "tcp"
       ipv6_cidr_blocks = []
-      prefix_list_ids = []
-      security_groups = []
-      self = false
+      prefix_list_ids  = []
+      security_groups  = []
+      self             = false
     },
     {
       cidr_blocks      = ["0.0.0.0/0", ]
@@ -124,57 +124,57 @@ resource "aws_security_group" "kube-master-sg" {
       to_port          = 6443
       protocol         = "tcp"
       ipv6_cidr_blocks = []
-      prefix_list_ids = []
-      security_groups = []
-      self = false
+      prefix_list_ids  = []
+      security_groups  = []
+      self             = false
     },
     {
-      security_groups = [aws_security_group.kube-mutual-sg.id]
+      security_groups  = [aws_security_group.kube-mutual-sg.id]
       description      = "Kubelet API"
       from_port        = 10250
       to_port          = 10250
       protocol         = "tcp"
       ipv6_cidr_blocks = []
-      prefix_list_ids = []
-      self = false
-      cidr_blocks = []
+      prefix_list_ids  = []
+      self             = false
+      cidr_blocks      = []
     },
     {
-      security_groups = [aws_security_group.kube-mutual-sg.id]
+      security_groups  = [aws_security_group.kube-mutual-sg.id]
       description      = "kube-scheduler"
       from_port        = 10259
       to_port          = 10259
       protocol         = "tcp"
       ipv6_cidr_blocks = []
-      prefix_list_ids = []
-      self = false
-      cidr_blocks = []
+      prefix_list_ids  = []
+      self             = false
+      cidr_blocks      = []
     },
     {
-      security_groups = [aws_security_group.kube-mutual-sg.id]
+      security_groups  = [aws_security_group.kube-mutual-sg.id]
       description      = "kube-controller-manager"
       from_port        = 10257
       to_port          = 10257
       protocol         = "tcp"
       ipv6_cidr_blocks = []
-      prefix_list_ids = []
-      self = false
-      cidr_blocks = []
+      prefix_list_ids  = []
+      self             = false
+      cidr_blocks      = []
     },
     {
-      security_groups = [aws_security_group.kube-mutual-sg.id]
+      security_groups  = [aws_security_group.kube-mutual-sg.id]
       description      = "etcd server client API"
       from_port        = 2379
       to_port          = 2380
       protocol         = "tcp"
       ipv6_cidr_blocks = []
-      prefix_list_ids = []
-      self = false
-      cidr_blocks = []
+      prefix_list_ids  = []
+      self             = false
+      cidr_blocks      = []
     },
   ]
   tags = {
-    Name = "kube-master-secgroup"
+    Name            = "kube-master-secgroup"
     terraform_group = "ec2-k8s"
   }
 }
@@ -313,11 +313,11 @@ variable "instance_user" {
 }
 
 resource "aws_instance" "controlplane" {
-  ami                         = var.instance_ami
-  instance_type               = var.instance_type
-  count                       = var.instance_controlplane_count
-  subnet_id                   = aws_subnet.public_subnet.id
-  
+  ami           = var.instance_ami
+  instance_type = var.instance_type
+  count         = var.instance_controlplane_count
+  subnet_id     = aws_subnet.public_subnet.id
+
   associate_public_ip_address = "true"
   tags = {
     Name            = "kubemaster-${count.index + 1}"
@@ -325,7 +325,7 @@ resource "aws_instance" "controlplane" {
   }
 
   key_name               = "myKey"
-  vpc_security_group_ids = [aws_security_group.kube-mutual-sg.id,aws_security_group.kube-master-sg.id]
+  vpc_security_group_ids = [aws_security_group.kube-mutual-sg.id, aws_security_group.kube-master-sg.id]
 
   provisioner "remote-exec" {
     inline = [
@@ -355,7 +355,7 @@ resource "aws_instance" "worker" {
     terraform_group = "ec2-k8s"
   }
   key_name               = "myKey"
-  vpc_security_group_ids = [aws_security_group.kube-mutual-sg.id,aws_security_group.kube-worker-sg.id]
+  vpc_security_group_ids = [aws_security_group.kube-mutual-sg.id, aws_security_group.kube-worker-sg.id]
 }
 
 # Ansible Section

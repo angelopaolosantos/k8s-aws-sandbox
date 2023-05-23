@@ -121,6 +121,25 @@
     - name: Install kubelet, kubeadm, kubectl (Ubuntu)
       when: ansible_facts['distribution'] == 'Debian' or ansible_facts['distribution'] == 'Ubuntu'
       block:
+        #- name: Create /etc/apt/keyrings/ Directory
+        #  file:
+        #    path: /etc/apt/keyrings/
+        #    state: directory
+
+        #- name: Download apt-key.gpg (Old Way)
+        #  get_url:
+        #    url: https://packages.cloud.google.com/apt/doc/apt-key.gpg
+        #    dest: /etc/apt/keyrings/kubernetes-archive-keyring.gpg
+ 
+        - name: Download apt-key.gpg (New Way)
+          shell:
+            cmd: curl -fsSL "https://packages.cloud.google.com/apt/doc/apt-key.gpg" | gpg --batch --yes --dearmor -o /etc/apt/trusted.gpg.d/kubernetes-archive-keyring.gpg
+            # --batch --yes will skip asking for yes prompt to overwrite
+          
+        - name: Update APT sources list
+          shell:
+            cmd: echo "deb https://packages.cloud.google.com/apt kubernetes-xenial main" | sudo tee /etc/apt/sources.list.d/kubernetes.list
+        
         - name: Update apt and install apt-transport-https, ca-certificates, curl
           apt:
             update_cache: yes
@@ -129,20 +148,6 @@
               - ca-certificates
               - curl
 
-        - name: Create /etc/apt/keyrings/ Directory
-          file:
-            path: /etc/apt/keyrings/
-            state: directory
-
-        - name: Download apt-key.gpg
-          get_url:
-            url: https://packages.cloud.google.com/apt/doc/apt-key.gpg
-            dest: /etc/apt/keyrings/kubernetes-archive-keyring.gpg
-
-        - name: Update APT sources list
-          shell:
-            cmd: echo "deb [signed-by=/etc/apt/keyrings/kubernetes-archive-keyring.gpg] https://apt.kubernetes.io/ kubernetes-xenial main" | sudo tee /etc/apt/sources.list.d/kubernetes.list
-        
         - name: Update apt and install kubelet, kubeadm, kubectl
           apt:
             update_cache: yes
