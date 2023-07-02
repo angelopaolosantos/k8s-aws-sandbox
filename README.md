@@ -1,1 +1,1 @@
-# ec2-k8s
+# k8s-aws-sandbox

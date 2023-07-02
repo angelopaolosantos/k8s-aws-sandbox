@@ -50,7 +50,7 @@ resource "aws_security_group" "kube-worker-sg" {
   ingress = [
     {
       cidr_blocks      = ["0.0.0.0/0", ]
-      description      = "SSH port"
+      description      = "SSH Access"
       from_port        = 22
       to_port          = 22
       protocol         = "tcp"
@@ -80,11 +80,34 @@ resource "aws_security_group" "kube-worker-sg" {
       prefix_list_ids  = []
       self             = false
       cidr_blocks      = []
+    },
+    {
+      security_groups  = [aws_security_group.kube-mutual-sg.id]
+      description      = "Weave Net"
+      from_port        = 6783
+      to_port          = 6783
+      protocol         = "tcp"
+      ipv6_cidr_blocks = []
+      prefix_list_ids  = []
+      self             = false
+      cidr_blocks      = []
+    },
+    {
+      security_groups  = [aws_security_group.kube-mutual-sg.id]
+      description      = "Weave Net"
+      from_port        = 6783
+      to_port          = 6784
+      protocol         = "udp"
+      ipv6_cidr_blocks = []
+      prefix_list_ids  = []
+      self             = false
+      cidr_blocks      = []
     }
+
   ]
   tags = {
     Name            = "kube-worker-secgroup"
-    terraform_group = "ec2-k8s"
+    terraform_group = "k8s-aws-sandbox"
   }
 }
 
@@ -108,7 +131,7 @@ resource "aws_security_group" "kube-master-sg" {
   ingress = [
     {
       cidr_blocks      = ["0.0.0.0/0", ]
-      description      = "SSH port"
+      description      = "SSH Access"
       from_port        = 22
       to_port          = 22
       protocol         = "tcp"
@@ -172,10 +195,32 @@ resource "aws_security_group" "kube-master-sg" {
       self             = false
       cidr_blocks      = []
     },
+    {
+      security_groups  = [aws_security_group.kube-mutual-sg.id]
+      description      = "Weave Net"
+      from_port        = 6783
+      to_port          = 6783
+      protocol         = "tcp"
+      ipv6_cidr_blocks = []
+      prefix_list_ids  = []
+      self             = false
+      cidr_blocks      = []
+    },
+    {
+      security_groups  = [aws_security_group.kube-mutual-sg.id]
+      description      = "Weave Net"
+      from_port        = 6783
+      to_port          = 6784
+      protocol         = "udp"
+      ipv6_cidr_blocks = []
+      prefix_list_ids  = []
+      self             = false
+      cidr_blocks      = []
+    }
   ]
   tags = {
     Name            = "kube-master-secgroup"
-    terraform_group = "ec2-k8s"
+    terraform_group = "k8s-aws-sandbox"
   }
 }
 
@@ -187,7 +232,7 @@ resource "aws_vpc" "sandbox" {
 
   tags = {
     Name            = "sandbox"
-    terraform_group = "ec2-k8s"
+    terraform_group = "k8s-aws-sandbox"
   }
 }
 
@@ -197,7 +242,7 @@ resource "aws_subnet" "public_subnet" {
 
   tags = {
     Name            = "public_subnet"
-    terraform_group = "ec2-k8s"
+    terraform_group = "k8s-aws-sandbox"
   }
 }
 
@@ -207,7 +252,7 @@ resource "aws_subnet" "private_subnet" {
 
   tags = {
     Name            = "private_subnet"
-    terraform_group = "ec2-k8s"
+    terraform_group = "k8s-aws-sandbox"
   }
 }
 
@@ -216,7 +261,7 @@ resource "aws_internet_gateway" "sandbox_igw" {
 
   tags = {
     Name            = "My Internet Gateway"
-    terraform_group = "ec2-k8s"
+    terraform_group = "k8s-aws-sandbox"
   }
 }
 
@@ -235,29 +280,9 @@ resource "aws_route_table" "public_rt" {
   # A map of tags to assign to the resource.
   tags = {
     Name            = "public_rt"
-    terraform_group = "ec2-k8s"
+    terraform_group = "k8s-aws-sandbox"
   }
 }
-
-/*
-resource "aws_route_table" "private1" {
-  # The VPC ID.
-  vpc_id = aws_vpc.main.id
-
-  route {
-    # The CIDR block of the route.
-    cidr_block = "0.0.0.0/0"
-
-    # Identifier of a VPC NAT gateway.
-    nat_gateway_id = aws_nat_gateway.gw1.id
-  }
-
-  # A map of tags to assign to the resource.
-  tags = {
-    Name = "private1"
-    terraform_group = "ec2-k8s"
-  }
-}*/
 
 resource "aws_route_table_association" "public1" {
   # The subnet ID to create an association.
@@ -273,23 +298,21 @@ resource "tls_private_key" "pk" {
 }
 
 resource "aws_key_pair" "kp" {
-  key_name   = "myKey" # Create a "myKey" to AWS!!
+  key_name   = "myKey" # Create a "myKey" on AWS.
   public_key = tls_private_key.pk.public_key_openssh
 
-  provisioner "local-exec" { # Create a "myKey.pem" to your computer!!
+  provisioner "local-exec" { # Copy a "myKey.pem" to local computer.
     command = "echo '${tls_private_key.pk.private_key_pem}' > ${path.cwd}/.ssh/myKey.pem"
   }
 
-  provisioner "local-exec" { # Create a "myKey.pem" to your computer!!
+  provisioner "local-exec" {
     command = "chmod 600 ${path.cwd}/.ssh/myKey.pem"
   }
 
   tags = {
-    terraform_group = "ec2-k8s"
+    terraform_group = "k8s-aws-sandbox"
   }
 }
-
-
 
 variable "instance_controlplane_count" {
   default = 1
@@ -321,7 +344,7 @@ resource "aws_instance" "controlplane" {
   associate_public_ip_address = "true"
   tags = {
     Name            = "kubemaster-${count.index + 1}"
-    terraform_group = "ec2-k8s"
+    terraform_group = "k8s-aws-sandbox"
   }
 
   key_name               = "myKey"
@@ -352,13 +375,13 @@ resource "aws_instance" "worker" {
   associate_public_ip_address = "true"
   tags = {
     Name            = "kubenode-${count.index + 1}"
-    terraform_group = "ec2-k8s"
+    terraform_group = "k8s-aws-sandbox"
   }
   key_name               = "myKey"
   vpc_security_group_ids = [aws_security_group.kube-mutual-sg.id, aws_security_group.kube-worker-sg.id]
 }
 
-# Ansible Section
+# Ansible Section 
 
 resource "ansible_host" "kubemaster" {
   name   = aws_instance.controlplane[count.index].public_ip
@@ -371,6 +394,7 @@ resource "ansible_host" "kubemaster" {
     host_name                    = aws_instance.controlplane[count.index].tags["Name"]
     greetings                    = "from host!"
     some                         = "variable"
+    private_ip                   = aws_instance.controlplane[count.index].private_ip
   }
   count = var.instance_controlplane_count
 }
@@ -386,10 +410,10 @@ resource "ansible_host" "kubenode" {
     host_name                    = aws_instance.worker[count.index].tags["Name"]
     greetings                    = "from host!"
     some                         = "variable"
+    private_ip                   = aws_instance.worker[count.index].private_ip
   }
   count = var.instance_worker_count
 }
-
 
 resource "ansible_group" "controlplanes" {
   name     = "controlplanes"
