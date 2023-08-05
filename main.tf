@@ -1,27 +1,3 @@
-terraform {
-  required_providers {
-    aws = {
-      source  = "hashicorp/aws"
-      version = "~> 4.0"
-    }
-    ansible = {
-      source  = "ansible/ansible"
-      version = "1.1.0"
-    }
-  }
-}
-
-# Configure the AWS Provider
-provider "aws" {
-  shared_config_files      = ["./.aws_credentials/config"]
-  shared_credentials_files = ["./.aws_credentials/credentials"]
-  profile                  = "angelo"
-}
-
-provider "ansible" {
-  # Configuration options
-}
-
 resource "aws_security_group" "kube-mutual-sg" {
   name   = "kube-mutual-sec-group"
   vpc_id = aws_vpc.sandbox.id
@@ -314,26 +290,6 @@ resource "aws_key_pair" "kp" {
   }
 }
 
-variable "instance_controlplane_count" {
-  default = 1
-}
-
-variable "instance_worker_count" {
-  default = 2
-}
-
-variable "instance_type" {
-  # default = "t3.micro"
-  default = "t3.medium"
-}
-
-variable "instance_ami" {
-  default = "ami-08766f81ab52792ce" # Ubuntu Server 20.04 LTS (HVM), SSD Volume Type
-}
-
-variable "instance_user" {
-  default = "ubuntu"
-}
 
 resource "aws_instance" "controlplane" {
   ami           = var.instance_ami

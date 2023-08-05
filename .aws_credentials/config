@@ -2,6 +2,6 @@
 region=eu-north-1
 output=text
 
-[profile user1]
+[profile angelo]
 region=eu-north-1
 output=json
