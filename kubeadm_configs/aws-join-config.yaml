@@ -1,0 +1,13 @@
+---
+apiVersion: kubeadm.k8s.io/v1beta1
+kind: JoinConfiguration
+discovery:
+  bootstrapToken:
+    token: "8rf968.gjn7zrbiogsample"
+    apiServerEndpoint: "10.25.1.152:6443"
+    caCertHashes:
+      - "sha256:1e419210f2c2bae5a028f8ed7b1e59b925e401ce46df0026abf87a9ec4sample"
+nodeRegistration:
+  name: ip-10-25-1-123.eu-north-1.compute.internal # Update to nodes hostname
+  kubeletExtraArgs:
+    cloud-provider: external

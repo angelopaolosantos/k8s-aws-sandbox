@@ -1,0 +1,17 @@
+---
+# Source: aws-cloud-controller-manager/templates/cluserrolebinding.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: system:cloud-controller-manager
+  labels:
+    helm.sh/chart: "aws-cloud-controller-manager-0.0.7"
+roleRef:
+  kind: ClusterRole
+  name: system:cloud-controller-manager
+  apiGroup: rbac.authorization.k8s.io
+subjects:
+- apiGroup: ""
+  kind: ServiceAccount
+  name: cloud-controller-manager
+  namespace: kube-system

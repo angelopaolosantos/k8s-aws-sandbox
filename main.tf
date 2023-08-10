@@ -84,6 +84,7 @@ resource "aws_security_group" "kube-worker-sg" {
   tags = {
     Name            = "kube-worker-secgroup"
     terraform_group = "k8s-aws-sandbox"
+    "kubernetes.io/cluster/kubernetes" = "owned"
   }
 }
 
@@ -197,6 +198,7 @@ resource "aws_security_group" "kube-master-sg" {
   tags = {
     Name            = "kube-master-secgroup"
     terraform_group = "k8s-aws-sandbox"
+    "kubernetes.io/cluster/kubernetes" = "owned"
   }
 }
 
@@ -219,6 +221,7 @@ resource "aws_subnet" "public_subnet" {
   tags = {
     Name            = "public_subnet"
     terraform_group = "k8s-aws-sandbox"
+    "kubernetes.io/cluster/kubernetes" = "owned"
   }
 }
 
@@ -229,6 +232,7 @@ resource "aws_subnet" "private_subnet" {
   tags = {
     Name            = "private_subnet"
     terraform_group = "k8s-aws-sandbox"
+    "kubernetes.io/cluster/kubernetes" = "owned"
   }
 }
 
@@ -301,6 +305,7 @@ resource "aws_instance" "controlplane" {
   tags = {
     Name            = "kubemaster-${count.index + 1}"
     terraform_group = "k8s-aws-sandbox"
+    "kubernetes.io/cluster/kubernetes" = "owned"
   }
 
   key_name               = "myKey"
@@ -332,6 +337,7 @@ resource "aws_instance" "worker" {
   tags = {
     Name            = "kubenode-${count.index + 1}"
     terraform_group = "k8s-aws-sandbox"
+    "kubernetes.io/cluster/kubernetes" = "owned"
   }
   key_name               = "myKey"
   vpc_security_group_ids = [aws_security_group.kube-mutual-sg.id, aws_security_group.kube-worker-sg.id]

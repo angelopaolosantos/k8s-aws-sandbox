@@ -5,6 +5,21 @@
     - name: Ping my hosts
       ansible.builtin.ping:
 
+    - name: Get current hostname
+      shell:
+        cmd: hostname
+      register: current_hostname
+
+    - name: Get new hostname required by AWS cloud controller
+      shell:
+        cmd: curl http://169.254.169.254/latest/meta-data/local-hostname
+      register: new_hostname
+
+    - name: Update hostname for AWS cloud controller
+      shell:
+        cmd: hostnamectl set-hostname $(curl http://169.254.169.254/latest/meta-data/local-hostname)
+      when: current_hostname.stdout != new_hostname.stdout
+
     - name: Print message
       ansible.builtin.debug:
         msg: Installing Kubernetes...
@@ -228,19 +243,32 @@
       failed_when: false
       changed_when: false
 
+    - name: Copy cluster config into /etc/kubernetes
+      copy:
+        dest: "/etc/kubernetes/aws-cluster-config.yaml"
+        content: |
+          ---
+          apiVersion: kubeadm.k8s.io/v1beta3
+          kind: ClusterConfiguration
+          networking:
+            serviceSubnet: "10.100.0.0/16"
+            podSubnet: "10.244.0.0/16"
+          apiServer:
+            extraArgs:
+              cloud-provider: "external"
+          controllerManager:
+            extraArgs:
+              cloud-provider: "external"
+
+#    - name: Initialize Cluster
+#      shell: kubeadm init --pod-network-cidr 10.244.0.0/16 --apiserver-advertise-address={{ private_ip }}
+#      when: kubeadm_status.stdout == "0"
+
     - name: Initialize Cluster
-      shell: kubeadm init --pod-network-cidr 10.244.0.0/16 --apiserver-advertise-address={{ private_ip }}
+      shell: kubeadm init --config /etc/kubernetes/aws-cluster-config.yaml
       when: kubeadm_status.stdout == "0"
 
     - debug: var=kubeadm_status.stdout_lines
-
-    # - name: Get join command
-    #   shell: kubeadm token create --print-join-command 2>/dev/null
-    #   register: join_command_raw
-      
-    # - name: Set join command
-    #   set_fact:
-    #     join_command: "{{ join_command_raw.stdout_lines[0] }}"
       
     - name: Create /home/ubuntu/.kube Directory
       file:
@@ -275,21 +303,21 @@
       delegate_facts: true
       run_once: true
 
-- name: Add Workers to Cluster
-  hosts: workers
-  become: true
-  tasks:
-    - name: join cluster
-      shell: "{{ hostvars['localhost'].join_command }} >> node_joined.txt"
-      args:
-        chdir: $HOME 
-        creates: node_joined.txt # Runs task only once since file is created once
+ # - name: Add Workers to Cluster
+ # hosts: workers
+ # become: true
+ # tasks:
+ #   - name: join cluster
+ #     shell: "{{ hostvars['localhost'].join_command }} >> node_joined.txt"
+ #     args:
+ #       chdir: $HOME 
+ #       creates: node_joined.txt # Runs task only once since file is created once
     
-    - name: verify if node has joined the cluster
-      shell: "cat $HOME/node_joined.txt"
-      register: check_node_joined 
-    
-    - debug: var=check_node_joined.stdout_lines
+ #   - name: verify if node has joined the cluster
+ #     shell: "cat $HOME/node_joined.txt"
+ #     register: check_node_joined 
+ #   
+ #   - debug: var=check_node_joined.stdout_lines
 
 - name: Install Weave Net
   hosts: controlplanes
