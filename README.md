@@ -1,6 +1,6 @@
 # k8s-aws-sandbox
 
-##Requirements:
+## Requirements:
 1. Add argument cloud-provider: "external" to apiServer, controllerManager and kubelet
 2. Add "kubernetes.io/cluster/kubernetes" = "owned" tags to control nodes, worker nodes, subnets, security groups
 3. Add "kubernetes.io/role/elb" = 1 to Public (Internet-facing) subnets
