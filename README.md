@@ -3,18 +3,18 @@
 ##Requirements:
 1. Add argument cloud-provider: "external" to apiServer, controllerManager and kubelet
 2. Add "kubernetes.io/cluster/kubernetes" = "owned" tags to control nodes, worker nodes, subnets, security groups
-1. Add "kubernetes.io/role/elb" = 1 to Public (Internet-facing) subnets
-2. Add "kubernetes.io/role/internal-elb" = 1 to private subnets
-3. attach aws required control-plane role/policy
-4. attach aws required node role/policy
+3. Add "kubernetes.io/role/elb" = 1 to Public (Internet-facing) subnets
+4. Add "kubernetes.io/role/internal-elb" = 1 to private subnets
+5. attach aws required control-plane role/policy
+6. attach aws required node role/policy
 
-5. arguments to aws cloud-controller-manager daemon-set:
+7. arguments to aws cloud-controller-manager daemon-set:
 ```
 --cluster-cidr=10.244.0.0/16  
 --allocate-node-cidrs=true    
 --configure-cloud-routes=false
 ```
-1. Add AWS credentials in .aws_credentials/
+8. Add AWS credentials in .aws_credentials/
 
 ## Run Terraform
 ```
