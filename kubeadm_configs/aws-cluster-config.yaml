@@ -4,9 +4,9 @@ kind: ClusterConfiguration
 networking:
   serviceSubnet: "10.100.0.0/16"
   podSubnet: "10.244.0.0/16"
-apiServer:
-  extraArgs:
-    cloud-provider: "external"
-controllerManager:
-  extraArgs:
-    cloud-provider: "external"
+  apiServer:
+    extraArgs:
+      cloud-provider: "external"
+  controllerManager:
+    extraArgs:
+      cloud-provider: "external"

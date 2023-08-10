@@ -186,6 +186,13 @@
             name: kubectl
             selection: hold
 
+        - name: Add kubelet argument into /etc/systemd/system/kubelet.service.d/20-hcloud.conf
+          copy:
+            dest: "/etc/systemd/system/kubelet.service.d/20-hcloud.conf"
+            content: |
+              [Service]
+              Environment="KUBELET_EXTRA_ARGS=--cloud-provider=external"
+
     - name: Install kubelet, kubeadm, kubectl (RHEL)
       when: ansible_facts['distribution'] == 'CentOS' or ansible_facts['distribution'] == 'RedHat'
       block:
@@ -222,6 +229,15 @@
         - name: Start and enable kubelet
           shell:
             cmd: systemctl enable --now kubelet
+
+        - name: Add kubelet argument into /etc/systemd/system/kubelet.service.d/20-hcloud.conf
+          copy:
+            dest: "/etc/systemd/system/kubelet.service.d/20-hcloud.conf"
+            content: |
+              [Service]
+              Environment="KUBELET_EXTRA_ARGS=--cloud-provider=external"
+        
+
 
 - name: Create Cluster using Kubeadm
   hosts: controlplanes
@@ -303,21 +319,21 @@
       delegate_facts: true
       run_once: true
 
- # - name: Add Workers to Cluster
- # hosts: workers
- # become: true
- # tasks:
- #   - name: join cluster
- #     shell: "{{ hostvars['localhost'].join_command }} >> node_joined.txt"
- #     args:
- #       chdir: $HOME 
- #       creates: node_joined.txt # Runs task only once since file is created once
+- name: Add Workers to Cluster
+  hosts: workers
+  become: true
+  tasks:
+    - name: join cluster
+      shell: "{{ hostvars['localhost'].join_command }} >> node_joined.txt"
+      args:
+        chdir: $HOME 
+        creates: node_joined.txt # Runs task only once since file is created once
+      
+    - name: verify if node has joined the cluster
+      shell: "cat $HOME/node_joined.txt"
+      register: check_node_joined 
     
- #   - name: verify if node has joined the cluster
- #     shell: "cat $HOME/node_joined.txt"
- #     register: check_node_joined 
- #   
- #   - debug: var=check_node_joined.stdout_lines
+    - debug: var=check_node_joined.stdout_lines
 
 - name: Install Weave Net
   hosts: controlplanes
@@ -333,6 +349,9 @@
   hosts: all
   become: true
   tasks:
+    - name: systemctl daemon-reload
+      ansible.builtin.systemd:
+        daemon_reload: yes
     - name: Restart kubelet service
       ansible.builtin.systemd:
         name: kubelet
@@ -341,3 +360,21 @@
       ansible.builtin.systemd:
         name: containerd
         state: restarted
+  tags:
+    - restart_services
+
+- name: Deploy AWS Cloud Controller Manager
+  hosts: controlplanes
+  become: true
+  become_user: ubuntu
+  tasks:
+  - name: Copy AWS Cloud Controller Manager manifests
+    ansible.builtin.copy:
+      src: ../aws_ccm/
+      dest: /home/ubuntu/aws_ccm
+  - name: Apply AWS Cloud Controller Manager manifests
+    shell:
+      cmd: |
+        kubectl apply -f /home/ubuntu/aws_ccm/.
+  tags:
+    - deploy_ccm

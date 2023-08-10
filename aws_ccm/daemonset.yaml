@@ -37,7 +37,7 @@ spec:
         {}
       containers:
         - name: aws-cloud-controller-manager
-          image: "registry.k8s.io/provider-aws/cloud-controller-manager:v1.23.0-alpha.0"
+          image: "registry.k8s.io/provider-aws/cloud-controller-manager:v1.27.2"
           args:
             - --v=2
             - --cloud-provider=aws

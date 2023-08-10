@@ -8,6 +8,6 @@ discovery:
     caCertHashes:
       - "sha256:1e419210f2c2bae5a028f8ed7b1e59b925e401ce46df0026abf87a9ec4sample"
 nodeRegistration:
-  name: ip-10-25-1-123.eu-north-1.compute.internal # Update to nodes hostname
+  name: ip-10-25-1-123.eu-north-1.compute.internal
   kubeletExtraArgs:
     cloud-provider: external

@@ -82,8 +82,8 @@ resource "aws_security_group" "kube-worker-sg" {
 
   ]
   tags = {
-    Name            = "kube-worker-secgroup"
-    terraform_group = "k8s-aws-sandbox"
+    Name                               = "kube-worker-secgroup"
+    terraform_group                    = "k8s-aws-sandbox"
     "kubernetes.io/cluster/kubernetes" = "owned"
   }
 }
@@ -196,8 +196,8 @@ resource "aws_security_group" "kube-master-sg" {
     }
   ]
   tags = {
-    Name            = "kube-master-secgroup"
-    terraform_group = "k8s-aws-sandbox"
+    Name                               = "kube-master-secgroup"
+    terraform_group                    = "k8s-aws-sandbox"
     "kubernetes.io/cluster/kubernetes" = "owned"
   }
 }
@@ -219,9 +219,10 @@ resource "aws_subnet" "public_subnet" {
   cidr_block = "10.25.1.0/24"
 
   tags = {
-    Name            = "public_subnet"
-    terraform_group = "k8s-aws-sandbox"
+    Name                               = "public_subnet"
+    terraform_group                    = "k8s-aws-sandbox"
     "kubernetes.io/cluster/kubernetes" = "owned"
+    "kubernetes.io/role/elb" = 1
   }
 }
 
@@ -230,9 +231,10 @@ resource "aws_subnet" "private_subnet" {
   cidr_block = "10.25.2.0/24"
 
   tags = {
-    Name            = "private_subnet"
-    terraform_group = "k8s-aws-sandbox"
+    Name                               = "private_subnet"
+    terraform_group                    = "k8s-aws-sandbox"
     "kubernetes.io/cluster/kubernetes" = "owned"
+    "kubernetes.io/role/internal-elb" = 1
   }
 }
 
@@ -296,15 +298,16 @@ resource "aws_key_pair" "kp" {
 
 
 resource "aws_instance" "controlplane" {
-  ami           = var.instance_ami
-  instance_type = var.instance_type
-  count         = var.instance_controlplane_count
-  subnet_id     = aws_subnet.public_subnet.id
+  ami                  = var.instance_ami
+  instance_type        = var.instance_type
+  iam_instance_profile = aws_iam_instance_profile.controlplane_profile.name
+  count                = var.instance_controlplane_count
+  subnet_id            = aws_subnet.public_subnet.id
 
   associate_public_ip_address = "true"
   tags = {
-    Name            = "kubemaster-${count.index + 1}"
-    terraform_group = "k8s-aws-sandbox"
+    Name                               = "kubemaster-${count.index + 1}"
+    terraform_group                    = "k8s-aws-sandbox"
     "kubernetes.io/cluster/kubernetes" = "owned"
   }
 
@@ -331,17 +334,194 @@ resource "aws_instance" "controlplane" {
 resource "aws_instance" "worker" {
   ami                         = var.instance_ami
   instance_type               = var.instance_type
+  iam_instance_profile        = aws_iam_instance_profile.worker_profile.name
   count                       = var.instance_worker_count
   subnet_id                   = aws_subnet.public_subnet.id
   associate_public_ip_address = "true"
   tags = {
-    Name            = "kubenode-${count.index + 1}"
-    terraform_group = "k8s-aws-sandbox"
+    Name                               = "kubenode-${count.index + 1}"
+    terraform_group                    = "k8s-aws-sandbox"
     "kubernetes.io/cluster/kubernetes" = "owned"
   }
   key_name               = "myKey"
   vpc_security_group_ids = [aws_security_group.kube-mutual-sg.id, aws_security_group.kube-worker-sg.id]
 }
+
+# AWS Cloud Controller Requirements - Roles and Policies
+resource "aws_iam_policy" "controlplane_policy" {
+  name        = "controlplane_policy"
+  path        = "/"
+  description = "Policy requirement for AWS Cloud Controller Manager"
+  policy = jsonencode({
+    "Version" : "2012-10-17",
+    "Statement" : [
+      {
+        "Effect" : "Allow",
+        "Action" : [
+          "autoscaling:DescribeAutoScalingGroups",
+          "autoscaling:DescribeLaunchConfigurations",
+          "autoscaling:DescribeTags",
+          "ec2:DescribeInstances",
+          "ec2:DescribeRegions",
+          "ec2:DescribeRouteTables",
+          "ec2:DescribeSecurityGroups",
+          "ec2:DescribeSubnets",
+          "ec2:DescribeVolumes",
+          "ec2:DescribeAvailabilityZones",
+          "ec2:CreateSecurityGroup",
+          "ec2:CreateTags",
+          "ec2:CreateVolume",
+          "ec2:ModifyInstanceAttribute",
+          "ec2:ModifyVolume",
+          "ec2:AttachVolume",
+          "ec2:AuthorizeSecurityGroupIngress",
+          "ec2:CreateRoute",
+          "ec2:DeleteRoute",
+          "ec2:DeleteSecurityGroup",
+          "ec2:DeleteVolume",
+          "ec2:DetachVolume",
+          "ec2:RevokeSecurityGroupIngress",
+          "ec2:DescribeVpcs",
+          "elasticloadbalancing:AddTags",
+          "elasticloadbalancing:AttachLoadBalancerToSubnets",
+          "elasticloadbalancing:ApplySecurityGroupsToLoadBalancer",
+          "elasticloadbalancing:CreateLoadBalancer",
+          "elasticloadbalancing:CreateLoadBalancerPolicy",
+          "elasticloadbalancing:CreateLoadBalancerListeners",
+          "elasticloadbalancing:ConfigureHealthCheck",
+          "elasticloadbalancing:DeleteLoadBalancer",
+          "elasticloadbalancing:DeleteLoadBalancerListeners",
+          "elasticloadbalancing:DescribeLoadBalancers",
+          "elasticloadbalancing:DescribeLoadBalancerAttributes",
+          "elasticloadbalancing:DetachLoadBalancerFromSubnets",
+          "elasticloadbalancing:DeregisterInstancesFromLoadBalancer",
+          "elasticloadbalancing:ModifyLoadBalancerAttributes",
+          "elasticloadbalancing:RegisterInstancesWithLoadBalancer",
+          "elasticloadbalancing:SetLoadBalancerPoliciesForBackendServer",
+          "elasticloadbalancing:AddTags",
+          "elasticloadbalancing:CreateListener",
+          "elasticloadbalancing:CreateTargetGroup",
+          "elasticloadbalancing:DeleteListener",
+          "elasticloadbalancing:DeleteTargetGroup",
+          "elasticloadbalancing:DescribeListeners",
+          "elasticloadbalancing:DescribeLoadBalancerPolicies",
+          "elasticloadbalancing:DescribeTargetGroups",
+          "elasticloadbalancing:DescribeTargetHealth",
+          "elasticloadbalancing:ModifyListener",
+          "elasticloadbalancing:ModifyTargetGroup",
+          "elasticloadbalancing:RegisterTargets",
+          "elasticloadbalancing:DeregisterTargets",
+          "elasticloadbalancing:SetLoadBalancerPoliciesOfListener",
+          "iam:CreateServiceLinkedRole",
+          "kms:DescribeKey"
+        ],
+        "Resource" : [
+          "*"
+        ]
+      }
+    ]
+  })
+  tags = {
+    terraform_group                    = "k8s-aws-sandbox"
+  }
+}
+
+resource "aws_iam_role" "controlplane_role" {
+  name = "controlplane_role"
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Action = "sts:AssumeRole"
+        Effect = "Allow"
+        Sid    = ""
+        Principal = {
+          Service = "ec2.amazonaws.com"
+        }
+      }
+    ]
+  })
+  tags = {
+    terraform_group                    = "k8s-aws-sandbox"
+  }
+}
+
+resource "aws_iam_role_policy_attachment" "controlplane_role_policy" {
+  role       = aws_iam_role.controlplane_role.name
+  policy_arn = aws_iam_policy.controlplane_policy.arn
+}
+
+resource "aws_iam_instance_profile" "controlplane_profile" {
+  name = "controlplane_profile"
+  role = aws_iam_role.controlplane_role.name
+  tags = {
+    terraform_group                    = "k8s-aws-sandbox"
+  }
+}
+
+
+resource "aws_iam_policy" "worker_policy" {
+  name        = "worker_policy"
+  path        = "/"
+  description = "Policy requirement for AWS Cloud Controller Manager"
+  policy = jsonencode({
+    "Version" : "2012-10-17",
+    "Statement" : [
+      {
+        "Effect" : "Allow",
+        "Action" : [
+          "ec2:DescribeInstances",
+          "ec2:DescribeRegions",
+          "ecr:GetAuthorizationToken",
+          "ecr:BatchCheckLayerAvailability",
+          "ecr:GetDownloadUrlForLayer",
+          "ecr:GetRepositoryPolicy",
+          "ecr:DescribeRepositories",
+          "ecr:ListImages",
+          "ecr:BatchGetImage"
+        ],
+        "Resource" : "*"
+      }
+    ]
+  })
+  tags = {
+    terraform_group                    = "k8s-aws-sandbox"
+  }
+}
+
+resource "aws_iam_role" "worker_role" {
+  name = "worker_role"
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Action = "sts:AssumeRole"
+        Effect = "Allow"
+        Sid    = ""
+        Principal = {
+          Service = "ec2.amazonaws.com"
+        }
+      }
+    ]
+  })
+  tags = {
+    terraform_group                    = "k8s-aws-sandbox"
+  }
+}
+
+resource "aws_iam_role_policy_attachment" "worker_role_policy" {
+  role       = aws_iam_role.worker_role.name
+  policy_arn = aws_iam_policy.worker_policy.arn
+}
+
+resource "aws_iam_instance_profile" "worker_profile" {
+  name = "worker_profile"
+  role = aws_iam_role.worker_role.name
+  tags = {
+    terraform_group                    = "k8s-aws-sandbox"
+  }
+}
+
 
 # Ansible Section 
 
