@@ -20,7 +20,6 @@ variable "instance_worker_type" {
 
 variable "instance_type" {
   default = "t3.micro"
-  # default = "t3.medium"
 }
 
 variable "instance_ami" {

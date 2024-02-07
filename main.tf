@@ -327,7 +327,7 @@ resource "aws_instance" "controlplane" {
     user        = var.instance_user
     private_key = file("${path.cwd}/.ssh/myKey.pem")
     timeout     = "4m"
-    insecure    = false
+    # insecure    = false
   }
 }
 
