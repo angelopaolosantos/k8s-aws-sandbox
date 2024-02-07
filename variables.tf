@@ -10,9 +10,17 @@ variable "instance_worker_count" {
   default = 2
 }
 
-variable "instance_type" {
-  # default = "t3.micro"
+variable "instance_controlplane_type" {
   default = "t3.medium"
+}
+
+variable "instance_worker_type" {
+  default = "t3.micro"
+}
+
+variable "instance_type" {
+  default = "t3.micro"
+  # default = "t3.medium"
 }
 
 variable "instance_ami" {

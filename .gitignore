@@ -3,3 +3,5 @@
 myKey.pem
 aws_key*
 terraform*
+tf_ansible_vars_file.yaml
+.conf*

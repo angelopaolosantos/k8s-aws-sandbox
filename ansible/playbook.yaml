@@ -85,7 +85,7 @@
 
     - name: download containerd sources
       get_url:
-        url: https://github.com/containerd/containerd/releases/download/v1.6.15/containerd-1.6.15-linux-amd64.tar.gz
+        url: https://github.com/containerd/containerd/releases/download/v1.7.13/containerd-1.7.13-linux-amd64.tar.gz
         dest: /etc/containerd.tar.gz
 
     - name: extract containerd file
@@ -112,7 +112,7 @@
 
     - name: Download runc.amd64
       get_url:
-        url: https://github.com/opencontainers/runc/releases/download/v1.1.4/runc.amd64
+        url: https://github.com/opencontainers/runc/releases/download/v1.1.12/runc.amd64
         dest: /etc/runc.amd64
 
     - name: Install runc.amd64
@@ -121,7 +121,7 @@
 
     - name: Download CNI Plugins
       get_url:
-        url: https://github.com/containernetworking/plugins/releases/download/v1.1.1/cni-plugins-linux-amd64-v1.1.1.tgz
+        url: https://github.com/containernetworking/plugins/releases/download/v1.4.0/cni-plugins-linux-amd64-v1.4.0.tgz
         dest: /etc/cni-plugins.tgz
 
     - name: Create /opt/cni/bin Directory
@@ -242,6 +242,8 @@
 - name: Create Cluster using Kubeadm
   hosts: controlplanes
   become: true
+  vars_files:
+    - tf_ansible_vars_file.yaml
   tasks:
     - name: Check if cluster is initialized
       shell: kubectl get cs | grep -c ok
@@ -270,6 +272,8 @@
             serviceSubnet: "10.100.0.0/16"
             podSubnet: "10.244.0.0/16"
           apiServer:
+            certSANs:
+            - "{{ tf_aws_instance_controlplace_ip }}"
             extraArgs:
               cloud-provider: "external"
           controllerManager:
@@ -378,3 +382,14 @@
         kubectl apply -f /home/ubuntu/aws_ccm/.
   tags:
     - deploy_ccm
+
+- name: Download admin.conf
+  hosts: controlplanes
+  become: true
+  become_user: ubuntu
+  tasks:
+  - name: Download admin.conf
+    ansible.builtin.fetch:
+      src: /etc/kubernetes/admin.conf
+      dest: .kube/{{ inventory_hostname }}/
+      flat: yes
